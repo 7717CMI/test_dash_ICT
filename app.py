@@ -3,6 +3,7 @@ from dash import Dash, html, dcc, Input, Output, State, callback_context
 import dash_bootstrap_components as dbc
 import pandas as pd
 import os
+from flask import Flask
 
 # Import components and pages
 from components.sidebar import create_sidebar, create_navbar
@@ -11,20 +12,36 @@ from pages.overview import create_overview_layout
 from pages.customer_details import create_customer_details_layout, create_customer_detail_card
 from pages.analytics import create_analytics_layout
 
-# Initialize the Dash app
+# Create Flask server first
+server = Flask(__name__)
+server.config['TIMEOUT'] = 300  # 5 minutes timeout
+
+# Initialize the Dash app with Chrome-compatible settings
 app = Dash(
     __name__,
+    server=server,
     external_stylesheets=[
         dbc.themes.BOOTSTRAP,
         'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css'
     ],
     suppress_callback_exceptions=True,
-    title="Customer Intelligence Dashboard"
+    title="Customer Intelligence Dashboard",
+    meta_tags=[
+        {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
+        {"http-equiv": "X-UA-Compatible", "content": "IE=edge"}
+    ]
 )
 
-# Configure server for better performance
+# Add security headers for Chrome compatibility
+@server.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['Cache-Control'] = 'public, max-age=300'
+    return response
+
+# Expose server for Gunicorn
 server = app.server
-server.config['TIMEOUT'] = 300  # 5 minutes timeout
 
 # Load data
 data_path = os.path.join('data', 'customers.csv')
