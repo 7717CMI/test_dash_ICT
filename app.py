@@ -29,26 +29,19 @@ app = Dash(
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
         {"http-equiv": "X-UA-Compatible", "content": "IE=edge"}
-    ]
+    ],
+    # Additional Chrome compatibility settings
+    prevent_initial_callbacks=False,
+    eager_loading=True
 )
 
-# Add security headers for Chrome compatibility
+# Add minimal headers - let Chrome decide
 @server.after_request
 def add_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    # Disable caching to ensure fresh content
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
-    # More permissive CSP for Chrome - allows all sources temporarily for debugging
-    response.headers['Content-Security-Policy'] = (
-        "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; "
-        "script-src * 'unsafe-inline' 'unsafe-eval'; "
-        "style-src * 'unsafe-inline'; "
-        "img-src * data: blob:; "
-        "font-src * data:; "
-        "connect-src * ws: wss:;"
-    )
     return response
 
 # Expose server for Gunicorn
